@@ -2,7 +2,7 @@
 #include <NimBLEDevice.h>
 #include "ble-server.h"
 
-
+#define BLE_NAME "Chrono32"
 #define RTC_SERVICE_UUID "ccd187a1-f3be-464b-8a49-d989e9c104ce"
 #define RTC_SYNC_CHARACTERISTIC_UUID "573c8962-c776-4016-a280-8daea13a01a8"
 
@@ -53,7 +53,7 @@ BLEServerManager::BLEServerManager()
 void BLEServerManager::init() {
     rtcQueue = xQueueCreate(1, sizeof(char[19]));
 
-    NimBLEDevice::init("NimBLE-ESP32-PIO");
+    NimBLEDevice::init(BLE_NAME);
 
     NimBLEServer *pServer = NimBLEDevice::createServer();
     NimBLEService *pRTC = pServer->createService(RTC_SERVICE_UUID);
@@ -70,6 +70,7 @@ void BLEServerManager::init() {
 
     NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
     pAdvertising->addServiceUUID(RTC_SERVICE_UUID);
+    pAdvertising->setName(BLE_NAME);
     pAdvertising->start();
     advertising = pAdvertising;
     isInit = true;
@@ -84,6 +85,7 @@ void BLEServerManager::deviceConnected() {
 void BLEServerManager::deviceDisconnected() {
     if (isInit) {
         isConnected = false;
+        advertising->start();
     }
 }
 
@@ -120,6 +122,7 @@ void BLEServerManager::toggleBLE() {
                         server->disconnect(conn_id); 
                     }
                 }
+                advertising->stop();
                 break;
             case BLEEnum::CONNECTING:
                 advertising->stop();
